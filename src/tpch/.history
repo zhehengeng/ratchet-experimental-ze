@@ -1,0 +1,3 @@
+#V2
+CREATE EXTERNAL TABLE lineitem\nSTORED AS TBL\nLOCATION './dataset/lineitem.tbl';
+CREATE EXTERNAL TABLE lineitem\nSTORED AS TABLE\nLOCATION './dataset/lineitem.tbl';
