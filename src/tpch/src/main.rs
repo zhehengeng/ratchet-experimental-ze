@@ -1,6 +1,7 @@
 // Newly added dependencies
 use std::thread;
-use futures::executor::block_on;
+use core::time::Duration;
+use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
 
 use std::{
     fs,
@@ -105,7 +106,11 @@ async fn benchmark_datafusion(opt: DataFusionBenchmarkOpt) -> Result<Vec<RecordB
         .with_target_partitions(opt.partitions)
         .with_batch_size(opt.batch_size)
         .with_collect_statistics(!opt.disable_statistics);
-    let ctx = SessionContext::with_config(config);
+    // let ctx = SessionContext::with_config(config);
+
+    let runtime_config = RuntimeConfig::new().with_memory_limit(12288, 1.0);
+    let runtime = Arc::new(RuntimeEnv::new(runtime_config)?);
+    let ctx = SessionContext::with_config_rt(config, runtime);
 
     // register tables
     register_tables(&opt, &ctx).await?;
@@ -286,7 +291,6 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
         println!("=== Optimized logical plan ===\n{:?}\n", plan);
     }
     let physical_plan = ctx.create_physical_plan(&plan).await?;
-    let physical_plan_2 = physical_plan.clone();
 
     if debug {
         println!(
@@ -295,13 +299,15 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
         );
     }
     let task_ctx = ctx.task_ctx();
+
+    let physical_plan_2 = physical_plan.clone();
     let task_ctx_2 = task_ctx.clone();
+    let background_thread =tokio::task::spawn(collect(physical_plan_2, task_ctx_2));
 
-    let background_thread = thread::spawn(|| {
-        block_on(collect(physical_plan_2, task_ctx_2))
-    });
+    thread::sleep(Duration::from_secs(1));
+    task_ctx.suspend();
 
-    let result = background_thread.join().unwrap()?;
+    let result = background_thread.await.unwrap()?;
     // let result = collect(physical_plan.clone(), task_ctx).await?;
     if debug {
         println!(
