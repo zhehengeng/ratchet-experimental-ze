@@ -1,7 +1,7 @@
 // Newly added dependencies
-use std::thread;
 use core::time::Duration;
 use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
+use std::thread;
 
 use std::{
     fs,
@@ -302,7 +302,7 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
 
     let physical_plan_2 = physical_plan.clone();
     let task_ctx_2 = task_ctx.clone();
-    let background_thread =tokio::task::spawn(collect(physical_plan_2, task_ctx_2));
+    let background_thread = tokio::task::spawn(collect(physical_plan_2, task_ctx_2));
 
     thread::sleep(Duration::from_secs(1));
     task_ctx.suspend();
