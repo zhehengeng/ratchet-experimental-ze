@@ -4,7 +4,7 @@ Running Arrow-Datafusion on TPC-H Benchmark.
 
 TPC-H queries are defined [here](./queries). 
 
-TPC-H dataset that are generated using `dbgen` in [tpch](https://www.tpc.org/tpc_documents_current_versions/current_specifications5.asp) are store [here](./dataset).
+TPC-H dataset that are generated using `dbgen` in [tpch](https://www.tpc.org/tpc_documents_current_versions/current_specifications5.asp) are store [here](./dataset). `./dbgen -s 1` will generate a dataset with 1GB.
 
 The command example is like:
 

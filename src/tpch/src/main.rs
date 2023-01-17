@@ -1,3 +1,7 @@
+// Newly added dependencies
+use std::thread;
+use futures::executor::block_on;
+
 use std::{
     fs,
     fs::File,
@@ -282,6 +286,7 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
         println!("=== Optimized logical plan ===\n{:?}\n", plan);
     }
     let physical_plan = ctx.create_physical_plan(&plan).await?;
+    let physical_plan_2 = physical_plan.clone();
 
     if debug {
         println!(
@@ -290,7 +295,14 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
         );
     }
     let task_ctx = ctx.task_ctx();
-    let result = collect(physical_plan.clone(), task_ctx).await?;
+    let task_ctx_2 = task_ctx.clone();
+
+    let background_thread = thread::spawn(|| {
+        block_on(collect(physical_plan_2, task_ctx_2))
+    });
+
+    let result = background_thread.join().unwrap()?;
+    // let result = collect(physical_plan.clone(), task_ctx).await?;
     if debug {
         println!(
             "=== Physical plan with metrics ===\n{}\n",
