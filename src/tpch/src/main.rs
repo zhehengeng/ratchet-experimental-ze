@@ -1,3 +1,4 @@
+use core::panic;
 // Newly added dependencies
 use core::time::Duration;
 use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
@@ -29,12 +30,10 @@ use datafusion::datasource::{
 
 use datafusion::physical_plan::{collect, display::DisplayableExecutionPlan, displayable};
 
+use datafusion::error::DataFusionError;
 use datafusion::execution::context::SessionState;
 
-use datafusion::{
-    error::{DataFusionError, Result},
-    prelude::*,
-};
+use datafusion::{error::Result, prelude::*};
 
 const TPCH_QUERY_START_ID: usize = 1;
 const TPCH_QUERY_END_ID: usize = 22;
@@ -139,9 +138,9 @@ async fn benchmark_datafusion(opt: DataFusionBenchmarkOpt) -> Result<Vec<RecordB
             }
         }
 
+        let row_count: usize = result.iter().map(|b| b.num_rows()).sum();
         let elapsed = start.elapsed().as_secs_f64() * 1000.0;
         millis.push(elapsed as f64);
-        let row_count: usize = result.iter().map(|b| b.num_rows()).sum();
         println!(
             "Query {} iteration {} took {:.1} ms and returned {} rows",
             opt.query, i, elapsed, row_count
@@ -307,8 +306,16 @@ async fn execute_query(ctx: &SessionContext, sql: &str, debug: bool) -> Result<V
     thread::sleep(Duration::from_secs(1));
     task_ctx.suspend();
 
-    let result = background_thread.await.unwrap()?;
-    // let result = collect(physical_plan.clone(), task_ctx).await?;
+    let e = if let Err(e) = background_thread.await.unwrap() {
+        e
+    } else {
+        panic!("not suspended");
+    };
+
+    dbg!(e);
+    task_ctx.resume();
+    let result = collect(physical_plan.clone(), task_ctx).await?;
+
     if debug {
         println!(
             "=== Physical plan with metrics ===\n{}\n",
