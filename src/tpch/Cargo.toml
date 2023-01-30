@@ -9,7 +9,7 @@ edition = "2021"
 structopt = { version = "0.3", default-features = false }
 datafusion = "14.0.0"
 num_cpus = "1.14.0"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
 parquet = "27.0.0"
@@ -19,3 +19,6 @@ futures = "0.3.25"
 
 [patch.crates-io]
 datafusion = { path = "./arrow-datafusion/datafusion/core" }
+arrow = {path = "./arrow-rs/arrow"}
+arrow-buffer = { path = "./arrow-rs/arrow-buffer"}
+arrow-schema = { path = "./arrow-rs/arrow-schema" }
